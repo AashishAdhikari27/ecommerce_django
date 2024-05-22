@@ -1,4 +1,7 @@
 from django.shortcuts import render
+
+from django.http import JsonResponse
+
 from .models import *
 
 from django.contrib.auth.decorators import login_required
@@ -80,8 +83,8 @@ def checkout(request):
 
 	if request.user.is_authenticated:
 		customer = request.user.customer
-		order = Order.objects.get(id=1)
-		# order, created = Order.objects.get_or_create(customer=customer, complete=False)
+		# order = Order.objects.get(id=1)
+		order, created = Order.objects.get_or_create(customer=customer, complete=False)
 		items = order.orderitem_set.all()
 	else:
 		#Create empty cart for now for non-logged in user
@@ -96,4 +99,6 @@ def checkout(request):
 	
 
 
+def updateItem(request):
+	return JsonResponse('Item was added', safe=False)
 
