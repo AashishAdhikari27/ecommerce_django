@@ -10,6 +10,9 @@ from django.contrib.auth.decorators import login_required
 
 import datetime
 
+
+from .utils import cookieCart
+
 # Create your views here.
 
 
@@ -22,9 +25,8 @@ def store(request):
 		cartItems = order.get_cart_items
 	else:
 		#Create empty cart for now for non-logged in user
-		items = []
-		order = {'get_cart_total':0, 'get_cart_items':0, 'shipping':False}
-		cartItems = order['get_cart_items']
+		cookieData = cookieCart(request)
+		cartItems = cookieData['cartItems']
 
 	products = Product.objects.all()
 	context = {'products':products, 'cartItems':cartItems}
@@ -52,71 +54,29 @@ def cart(request):
 		cartItems = order.get_cart_items
 
 	else:
-		#Create empty cart for now for non-logged in user
+		cookieData = cookieCart(request)
+		cartItems = cookieData['cartItems']
+		order = cookieData['order']
+		items = cookieData['items']
 
-
-		try:
-			cart = json.loads(request.COOKIES['cart'])
-		except:
-			cart = {}
-			print('CART:', cart)
-
-
-		items = []
-		
-		order = {'get_cart_total':0, 'get_cart_items':0 , 'shipping':False}
-		
-		cartItems = order['get_cart_items']
-
-
-		for i in cart:
-			cartItems += cart[i]['quantity']
-
-			product = Product.objects.get(id=i)
-			total = (product.price * cart[i]['quantity'])
-
-			order['get_cart_total'] += total
-			order['get_cart_items'] += cart[i]['quantity']
-
-			item = {
-				'id':product.id,
-				'product':{'id':product.id,'name':product.name, 'price':product.price, 
-				'imageURL':product.imageURL}, 'quantity':cart[i]['quantity'],
-				'digital':product.digital,'get_total':total,
-				}
-			items.append(item)
-
-
-
- 
 
 	# print('Request : ' ,request)
 	# print('Request User : ' ,request.user)
-
 	# if request.user.is_authenticated:
-
-	# 	customer = request.user.customer	
-
+	# 	customer = request.user.customer
 	# 	order = Order.objects.get(customer=customer)
 	# 	print('Order object : ', order)
-
-
 	# 	order_id = order.id
 	# 	print('Order Id: ', order_id)
 	# 	# items = OrderItem.objects.filter(order=order_id)
-
 	# 	items = order.orderitem_set.all()
-
 	# 	print('Ordered Items : ', items)
-
-	
 	# else:
 	# 	#Create empty cart for now for non-logged in user
 	# 	items = []
-		
 	# 	order = {'get_cart_total':0, 'get_cart_items':0}
 
-
+	products = Product.objects.all()
 
 	context = {'items':items, 'order':order , 'cartItems':cartItems}
 
@@ -137,11 +97,10 @@ def checkout(request):
 		cartItems = order.get_cart_items
 
 	else:
-		#Create empty cart for now for non-logged in user
-		items = []
-		order = {'get_cart_total':0, 'get_cart_items':0, 'shipping':False}
-		cartItems = order['get_cart_items']
-
+		cookieData = cookieCart(request)
+		cartItems = cookieData['cartItems']
+		order = cookieData['order']
+		items = cookieData['items']
 
 	context = {'items':items, 'order':order , 'cartItems':cartItems}
 	
