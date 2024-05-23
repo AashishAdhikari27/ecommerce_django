@@ -11,22 +11,16 @@ from django.contrib.auth.decorators import login_required
 import datetime
 
 
-from .utils import cookieCart
+from .utils import cookieCart,cartData
 
 # Create your views here.
 
 
 def store(request):
 
-	if request.user.is_authenticated:
-		customer = request.user.customer
-		order, created = Order.objects.get_or_create(customer=customer, complete=False)
-		items = order.orderitem_set.all()
-		cartItems = order.get_cart_items
-	else:
-		#Create empty cart for now for non-logged in user
-		cookieData = cookieCart(request)
-		cartItems = cookieData['cartItems']
+	data = cartData(request)
+	cartItems = data['cartItems']
+
 
 	products = Product.objects.all()
 	context = {'products':products, 'cartItems':cartItems}
@@ -37,27 +31,11 @@ def store(request):
 
 def cart(request):
 	
-	if request.user.is_authenticated:
+	data = cartData(request)
+	cartItems = data['cartItems']
+	order = data['order']
+	items = data['items']
 
-		print('Fucking i am authenticated')
-		
-		customer = request.user.customer
-
-		order, created = Order.objects.get_or_create(customer=customer, complete=False)
-
-		print('Orders : ', order)
-	
-		items = order.orderitem_set.all()
-
-		print('Items Ordered : ', items)
-
-		cartItems = order.get_cart_items
-
-	else:
-		cookieData = cookieCart(request)
-		cartItems = cookieData['cartItems']
-		order = cookieData['order']
-		items = cookieData['items']
 
 
 	# print('Request : ' ,request)
@@ -88,19 +66,11 @@ def cart(request):
 
 def checkout(request):
 
-	if request.user.is_authenticated:
-		customer = request.user.customer
-		# order = Order.objects.get(id=1)
-		order, created = Order.objects.get_or_create(customer=customer, complete=False)
-		items = order.orderitem_set.all()
+	data = cartData(request)
+	cartItems = data['cartItems']
+	order = data['order']
+	items = data['items']
 
-		cartItems = order.get_cart_items
-
-	else:
-		cookieData = cookieCart(request)
-		cartItems = cookieData['cartItems']
-		order = cookieData['order']
-		items = cookieData['items']
 
 	context = {'items':items, 'order':order , 'cartItems':cartItems}
 	
