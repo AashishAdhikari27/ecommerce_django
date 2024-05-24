@@ -11,7 +11,17 @@ from django.contrib.auth.decorators import login_required
 import datetime
 
 
-from .utils import cookieCart,cartData
+from .utils import cookieCart,cartData,guestOrder
+
+
+
+
+
+
+import hmac
+import hashlib
+import base64
+import uuid
 
 # Create your views here.
 
@@ -58,26 +68,62 @@ def cart(request):
 
 	context = {'items':items, 'order':order , 'cartItems':cartItems}
 
+
+
+	
+
 	return render(request, 'store/cart.html', context)
 
 
 
 
 
+# def checkout(request):
+
+# 	data = cartData(request)
+# 	cartItems = data['cartItems']
+# 	order = data['order']
+ 
+	
+# 	items = data['items']
+	
+ 
+ 
+# 	context = {'items':items, 'order':order , 'cartItems':cartItems}
+	
+
+# 	return render(request, 'store/checkout.html', context)
+
+	
+ 
+ 
 def checkout(request):
+    data = cartData(request)
+    cartItems = data['cartItems']
+    order = data['order']
+    items = data['items']
 
-	data = cartData(request)
-	cartItems = data['cartItems']
-	order = data['order']
-	items = data['items']
+    # Generate UUID
+    uuid_val = uuid.uuid4()
+    
+    # Example usage:
+    secret_key = "8gBm/:&EnhH.1/q"
+    total_amount = 100  # Replace this with your actual total amount
+    data_to_sign = f"{total_amount},{uuid_val},EPAYTEST"
+    
+    # Generate HMAC-SHA256 signature
+    signature = genSha256(secret_key, data_to_sign)
 
+    context = {
+        'items': items,
+        'order': order,
+        'cartItems': cartItems,
+        'uuid': uuid_val,
+        'signature': signature
+    }
 
-	context = {'items':items, 'order':order , 'cartItems':cartItems}
-	
+    return render(request, 'store/checkout.html', context)
 
-	return render(request, 'store/checkout.html', context)
-
-	
 
 
 def updateItem(request):
@@ -118,24 +164,44 @@ def processOrder(request):
 	if request.user.is_authenticated:
 		customer = request.user.customer
 		order, created = Order.objects.get_or_create(customer=customer, complete=False)
-		total = float(data['form']['total'])
-		order.transaction_id = transaction_id
-
-		if total == order.get_cart_total:
-			order.complete = True
-		order.save()
-
-		if order.shipping == True:
-			ShippingAddress.objects.create(
-			customer=customer,
-			order=order,
-			address=data['shipping']['address'],
-			city=data['shipping']['city'],
-			state=data['shipping']['state'],
-			zipcode=data['shipping']['zipcode'],
-			)
 	else:
-		print('User is not logged in')
+		customer, order = guestOrder(request, data)
+
+	total = float(data['form']['total'])
+	order.transaction_id = transaction_id
+
+	if total == order.get_cart_total:
+		order.complete = True
+	order.save()
+
+	if order.shipping == True:
+		ShippingAddress.objects.create(
+		customer=customer,
+		order=order,
+		address=data['shipping']['address'],
+		city=data['shipping']['city'],
+		state=data['shipping']['state'],
+		zipcode=data['shipping']['zipcode'],
+		)
+
 
 	return JsonResponse('Payment submitted..', safe=False)
+
+
+# Define genSha256 function
+def genSha256(key, message):
+    key = key.encode('utf-8')
+    message = message.encode('utf-8')
+    hmac_sha256 = hmac.new(key, message, hashlib.sha256)
+    digest = hmac_sha256.digest()
+    signature = base64.b64encode(digest).decode('utf-8')
+    return signature
+
+
+
+
+
+
+
+
 

@@ -47,14 +47,39 @@
         </div>
         <br>
 
+		<div class="box-element hidden" id="payment-info">
+			<label for="payment">Payment Option:</label>
+			<select id="payment" name="payment">
+
+				<option value="e-Sewa">e-Sewa</option>
+				<option value="Cash">Cash on Delivery</option>
+				
+			</select>
+			<div id="button-container" style="display: flex; justify-content: center; margin-top: 10px;">
+				<button id="make-payment" style="display: none;">Place Order</button>
+			</div>
+		</div>
+		
+		
+		
         <div class="box-element hidden" id="payment-info">
-            <small>Payment options</small>
+			<label for="payment">Payment Option:</label>
+			<select id="payment" name="payment">
+			  <option value="Cash">Cash on Delivery</option>
+			  
+			  <option value="e-Sewa">e-Sewa</option>
+
+			</select>
 
             <button id="make-payment">Make payment</button>
 
         </div>
 
     </div>
+
+
+
+
 
     <div class="col-lg-6">
         <div class="box-element">
@@ -80,7 +105,7 @@
 
 </div>
 
-<script type="text/javascript">
+<!-- <script type="text/javascript">
     var shipping = '{{order.shipping}}'
 
     var total = '{{order.get_cart_total|floatformat:2}}'
@@ -160,10 +185,11 @@
 				console.log('Success:', data);
 				alert('Transaction completed');  
 
-				cart = {}
+				 cart = {}
+
 				document.cookie ='cart=' + JSON.stringify(cart) + ";domain=;path=/"
 
-				window.location.href = "{% url 'store' %}"
+				 window.location.href = "{% url 'store' %}"
 
 				})
 	    
@@ -173,7 +199,182 @@
 
 
 
-</script>
+</script> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <div class="esewa-form">
+    <form id= "esewa-form"action="http://rc-epay.esewa.com.np/api/epay/main/v2/form" method="POST" id="myform">
+        <input type="text" id="access_key" name="access_key" value="your_access_key" required>
+        <input type="text" id="amount" name="amount" value="${{item.product.price}}" required>
+        <input type="text" id="tax_amount" name="tax_amount" value="0" required>
+        <input type="text" id="total_amount" name="total_amount" value="${{order.get_cart_total|floatformat:2}}" required>
+        <input type="text" id="transaction_uuid" name="transaction_uuid" required>
+        <input type="text" id="product_code" name="product_code" value="EPAYTEST" required>
+        <input type="text" id="product_service_charge" name="product_service_charge" value="0" required>
+        <input type="text" id="product_delivery_charge" name="product_delivery_charge" value="0" required>
+        <input type="text" id="success_url" name="success_url" value="https://esewa.com.np" required>
+        <input type="text" id="failure_url" name="failure_url" value="https://google.com" required>
+        <input type="text" id="signed_field_names" name="signed_field_names" value="access_key,amount,tax_amount,total_amount,transaction_uuid,product_code,product_service_charge,product_delivery_charge,success_url,failure_url" required>
+        <input type="text" id="signature" name="signature" required>
+
+        <input value="Submit" type="submit">
+    </form>
+</div> -->
+
+
+
+<script type="text/javascript">
+    var shipping = '{{order.shipping}}';
+    var total = '{{order.get_cart_total|floatformat:2}}';
+    var user = '{{ user }}';
+
+    if (shipping == 'False') {
+        document.getElementById('shipping-info').innerHTML = '';
+    }
+
+    if (user != 'AnonymousUser') {
+        document.getElementById('user-info').innerHTML = '';
+    }
+
+    if (shipping == 'False' && user != 'AnonymousUser') {
+        // Hide entire form if user is logged in and shipping is false
+        document.getElementById('form-wrapper').classList.add("hidden");
+        // Show payment if logged in user wants to buy an item that does not require shipping
+        document.getElementById('payment-info').classList.remove("hidden");
+    }
+
+    var form = document.getElementById('form');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        console.log('Form Submitted...');
+        document.getElementById('form-button').classList.add("hidden");
+        document.getElementById('payment-info').classList.remove("hidden");
+    });
+
+    var makePaymentButton = document.getElementById('make-payment');
+    var paymentSelect = document.getElementById('payment');
+
+    paymentSelect.addEventListener('change', function() {
+        if (paymentSelect.value === 'Cash') {
+            makePaymentButton.style.display = 'block';
+        } else {
+            makePaymentButton.style.display = 'none';
+        }
+    });
+
+    
+ 
+
+
+    makePaymentButton.addEventListener('click', function(e) {
+        submitFormData();
+    });
+
+    function submitFormData() {
+        console.log('Payment button clicked');
+
+        var userFormData = {
+            'name': null,
+            'email': null,
+            'total': total,
+        };
+
+        var shippingInfo = {
+            'address': null,
+            'city': null,
+            'state': null,
+            'zipcode': null,
+        };
+
+        if (shipping != 'False') {
+            shippingInfo.address = form.address.value;
+            shippingInfo.city = form.city.value;
+            shippingInfo.state = form.state.value;
+            shippingInfo.zipcode = form.zipcode.value;
+        }
+
+        if (user == 'AnonymousUser') {
+            userFormData.name = form.name.value;
+            userFormData.email = form.email.value;
+        }
+
+        console.log('Shipping Info:', shippingInfo);
+        console.log('User Info:', userFormData);
+
+        var url = "/process_order/";
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({'form': userFormData, 'shipping': shippingInfo}),
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            console.log('Success:', data);
+            alert('Transaction completed');
+
+            cart = {};
+
+            document.cookie = 'cart=' + JSON.stringify(cart) + ";domain=;path=/";
+
+            window.location.href = "{% url 'store' %}";
+        });
+    }
+
+    // Trigger the change event to set the initial state of the make payment button
+    paymentSelect.dispatchEvent(new Event('change'));
+</script> 
+
+
+
+<div class="esewa-form">
+    <form id= "esewa-form"action="http://rc-epay.esewa.com.np/api/epay/main/v2/form" method="POST">
+        <input type="hidden" id="amount" name="amount" value="${{order.get_cart_total|floatformat:2}}" required>
+        <input type="hidden" id="tax_amount" name="tax_amount" value="0" required>
+        <input type="hidden" id="total_amount" name="total_amount" value="${{order.get_cart_total|floatformat:2}}" required>
+        <input type="hidden" id="transaction_uuid" name="transaction_uuid" value = "{{uuid}}" required>
+        <input type="hidden" id="product_code" name="product_code" value="EPAYTEST" required>
+        <input type="hidden" id="product_service_charge" name="product_service_charge" value="0" required>
+        <input type="hidden" id="product_delivery_charge" name="product_delivery_charge" value="0" required>
+        <input type="hidden" id="success_url" name="success_url" value="https://esewa.com.np" required>
+        <input type="hidden" id="failure_url" name="failure_url" value="https://google.com" required>
+       <input type="hidden" id="signed_field_names" name="signed_field_names"
+        value="total_amount,transaction_uuid,product_code" required>
+      <input type="hidden" id="signature" name="signature" value="{{signature}}" required>
+  </div>
+
+<!-- 
+
+
+<script>
+  // Add event listener to the payment method dropdown
+  document.getElementById('payment-method').addEventListener('change', function() {
+    var selectedPaymentMethod = this.value;
+    var paymentSection = document.getElementById('payment-section');
+
+    // If Esewa is selected, show the payment section; otherwise, hide it
+    if (selectedPaymentMethod === 'esewa') {
+      paymentSection.style.display = 'block';
+    } else {
+      paymentSection.style.display = 'none';
+    }
+  });
+</script> -->
 
 
 {% endblock content %}
