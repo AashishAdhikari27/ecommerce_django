@@ -206,5 +206,12 @@ def genSha256(key, message):
 
 
 
+def esewa_payment_success(request):
+
+	print('Inside esewa verification/success url')
+
+
+	pass
+
 
 

@@ -19,7 +19,7 @@ urlpatterns = [
     
 	path('process_order/', views.processOrder, name="process_order"),
 	
-	# path('esewa_payment_success/', views.esewa_payment_success, name="esewa_payment_success"),
+	path('esewa_payment_success/', views.esewa_payment_success, name="esewa_payment_success"),
   
     # path('esewa_payment_failure/', views.esewa_payment_failure, name="esewa_payment_failure"),
 ]
