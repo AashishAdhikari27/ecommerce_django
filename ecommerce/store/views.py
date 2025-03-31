@@ -98,31 +98,34 @@ def cart(request):
  
  
 def checkout(request):
-    data = cartData(request)
-    cartItems = data['cartItems']
-    order = data['order']
-    items = data['items']
+	data = cartData(request)
+	cartItems = data['cartItems']
+	order = data['order']
+	items = data['items']
 
-    # Generate UUID
-    uuid_val = uuid.uuid4()
-    
-    # Example usage:
-    secret_key = "8gBm/:&EnhH.1/q"
-    total_amount = 100  # Replace this with your actual total amount
-    data_to_sign = f"{total_amount},{uuid_val},EPAYTEST"
-    
-    # Generate HMAC-SHA256 signature
-    signature = genSha256(secret_key, data_to_sign)
+	uuid_val = uuid.uuid4()
+	# print('Transaction UUID: ', uuid_val)
 
-    context = {
-        'items': items,
-        'order': order,
-        'cartItems': cartItems,
-        'uuid': uuid_val,
-        'signature': signature
-    }
+	secret_key = "8gBm/:&EnhH.1/q"
+	product_code = 'EPAYTEST'
 
-    return render(request, 'store/checkout.html', context)
+	total_amount = order.get_cart_total
+	# print('Total Amount: ', total_amount)
+
+	data_to_sign = f"total_amount={total_amount},transaction_uuid={uuid_val},product_code={product_code}"
+
+	# Generate HMAC-SHA256 signature
+	signature = genSha256(secret_key, data_to_sign)
+
+	context = {
+		'items': items,
+		'order': order,
+		'cartItems': cartItems,
+		'uuid': uuid_val,
+		'signature': signature
+	}
+
+	return render(request, 'store/checkout.html', context)
 
 
 
